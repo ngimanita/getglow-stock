@@ -1,0 +1,11 @@
+{
+  "name": "GETGLOW Stock — ระบบจัดการคลังยาฉีด",
+  "short_name": "GETGLOW Stock",
+  "description": "ระบบจัดการสต๊อกยาฉีดสำหรับ GETGLOW Clinic",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#F9F0E4",
+  "theme_color": "#000000",
+  "lang": "th",
+  "icons": []
+}

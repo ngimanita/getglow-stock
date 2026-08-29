@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum ProductType {
+  botox
+  filler
+  other
+  machine
+}
+
+enum UserRole {
+  owner
+  stock
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  name          String
+  type          ProductType
+  unitsPer      Int      @default(1) // drug units (or shots) per sales unit; machine: shots per head
+  onHand        Float    @default(0) // sales units (vials/boxes/pieces), or unopened heads for machine
+  openShots     Int      @default(0) // machine only: shots left in the currently-mounted head
+  usagePerMonth Float    @default(1)
+  lastCountAt   DateTime
+  archived      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  lots   Lot[]
+  counts StockCount[]
+
+  @@index([archived])
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  contact   String?
+  lineId    String?
+  note      String?
+  createdAt DateTime @default(now())
+
+  lots Lot[]
+}
+
+model Lot {
+  id           String    @id @default(cuid())
+  productId    String
+  product      Product   @relation(fields: [productId], references: [id])
+  purchaseDate DateTime?
+  expiryDate   DateTime? // required on the receive-lot form; nullable only for historic/back-filled records
+  qty          Float
+  unitPrice    Float
+  supplierId   String?
+  supplier     Supplier? @relation(fields: [supplierId], references: [id])
+  supplierName String
+  remaining    Float
+  discarded    Boolean   @default(false)
+  qtyDiscarded Float?
+  note         String?
+  createdById  String?
+  createdBy    User?     @relation(fields: [createdById], references: [id])
+  createdAt    DateTime  @default(now())
+
+  @@index([productId])
+  @@index([expiryDate])
+}
+
+model StockCount {
+  id             String   @id @default(cuid())
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id])
+  countedAt      DateTime
+  qty            Float
+  headsCounted   Int?
+  openShots      Int?
+  ratePerMonth   Float
+  countedByName  String
+  countedById    String?
+  countedBy      User?    @relation(fields: [countedById], references: [id])
+  createdAt      DateTime @default(now())
+
+  @@index([productId, countedAt])
+}
+
+model Setting {
+  id              Int    @id @default(autoincrement())
+  leadTimeDays    Int    @default(10)
+  safetyStockDays Int    @default(7)
+  expiryWarnDays  Int    @default(45)
+}
+
+model User {
+  id             String    @id @default(cuid())
+  displayName    String
+  role           UserRole
+  pinHash        String
+  active         Boolean   @default(true)
+  failedAttempts Int       @default(0)
+  lockedUntil    DateTime?
+  createdAt      DateTime  @default(now())
+
+  lots      Lot[]
+  counts    StockCount[]
+  auditLogs AuditLog[]
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  userName  String
+  action    String
+  detail    String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

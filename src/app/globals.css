@@ -1,26 +1,359 @@
 @import "tailwindcss";
 
+/* ============================================================
+   GETGLOW design tokens — ported verbatim from design/tokens/*.css
+   in the handoff bundle. Exact brand values; never tint or darken.
+   ============================================================ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+
+  /* colors.css */
+  --gg-orange: #ff552f;
+  --gg-pearl: #f9f0e4;
+  --gg-black: #000000;
+  --gg-ivory: #efd7b9;
+  --gg-white: #ffffff;
+  --gg-pebble: #363030;
+
+  --gg-grey-50: #f4f1ee;
+  --gg-grey-100: #e7e2dd;
+  --gg-grey-200: #d2cbc5;
+  --gg-grey-300: #b3aba5;
+  --gg-grey-400: #8c8480;
+  --gg-grey-500: #6b6462;
+  --gg-grey-600: #4e4846;
+  --gg-grey-700: #363030;
+
+  --gg-orange-press: #e64524;
+  --gg-orange-wash: rgba(255, 85, 47, 0.1);
+  --gg-orange-wash-strong: rgba(255, 85, 47, 0.18);
+
+  --surface-page: var(--gg-pearl);
+  --surface-card: var(--gg-white);
+  --surface-ivory: var(--gg-ivory);
+  --surface-ink: var(--gg-black);
+  --surface-pebble: var(--gg-pebble);
+
+  --text-body: var(--gg-black);
+  --text-muted: var(--gg-grey-500);
+  --text-on-ink: var(--gg-pearl);
+
+  --line-hairline: var(--gg-grey-100);
+
+  --status-positive: #2e7d5b;
+  --status-warning: #c98a17;
+  --status-critical: var(--gg-orange);
+
+  /* shape.css */
+  --radius-soft: 8px;
+  --radius-card: 16px;
+  --radius-panel: 24px;
+  --radius-capsule: 999px;
+
+  --shadow-card: 0 6px 20px rgba(54, 48, 48, 0.1);
+  --shadow-lift: 0 14px 40px rgba(54, 48, 48, 0.14);
+
+  --ease-standard: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+
+  /* spacing.css */
+  --gutter-page: 24px;
+  --gutter-page-lg: 64px;
+  --content-max: 1200px;
+  --measure: 62ch;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-gg-orange: var(--gg-orange);
+  --color-gg-pearl: var(--gg-pearl);
+  --color-gg-black: var(--gg-black);
+  --color-gg-ivory: var(--gg-ivory);
+  --color-gg-white: var(--gg-white);
+  --color-gg-pebble: var(--gg-pebble);
+  --font-poppins: var(--font-core);
+  --font-playfair: var(--font-accent);
+  --font-thai: var(--font-thai);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--surface-page);
+  color: var(--text-body);
+  font-family: var(--font-thai), var(--font-core), system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+a {
+  color: var(--gg-orange);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--gg-orange-press);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+::selection {
+  background: var(--gg-orange);
+  color: var(--gg-pearl);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+/* ============================================================
+   Shared component classes — the recurring GETGLOW shapes.
+   Depth is a thick line, not a shadow: 2px borders, flat at rest.
+   ============================================================ */
+
+.gg-kicker {
+  font-family: var(--font-accent), Georgia, serif;
+  font-style: italic;
+  color: var(--gg-orange);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.gg-eyebrow {
+  font-family: var(--font-core), sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.gg-title {
+  font-family: var(--font-thai), var(--font-core), sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  line-height: 1.1;
+}
+@media (min-width: 640px) {
+  .gg-title {
+    font-size: 30px;
+  }
+}
+
+.gg-panel {
+  background: var(--gg-white);
+  border-radius: var(--radius-panel);
+  padding: 20px;
+}
+@media (min-width: 640px) {
+  .gg-panel {
+    padding: 24px;
+  }
+}
+
+.gg-panel-ink {
+  background: var(--gg-black);
+  color: var(--text-on-ink);
+  border-radius: var(--radius-panel);
+  padding: 20px;
+}
+@media (min-width: 640px) {
+  .gg-panel-ink {
+    padding: 24px;
+  }
+}
+
+.gg-card {
+  background: var(--gg-white);
+  border-radius: var(--radius-card);
+  border: 2px solid var(--line-hairline);
+  padding: 16px;
+  transition: transform var(--dur-base) var(--ease-standard);
+}
+@media (min-width: 640px) {
+  .gg-card {
+    padding: 20px;
+  }
+}
+.gg-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
+}
+
+.gg-input {
+  font-family: var(--font-core), var(--font-thai), sans-serif;
+  font-size: 15px;
+  padding: 11px 14px;
+  border: 2px solid var(--gg-grey-200);
+  border-radius: var(--radius-soft);
+  background: var(--gg-white);
+  color: var(--text-body);
+  width: 100%;
+  min-height: 44px;
+  transition: border-color var(--dur-fast) var(--ease-standard);
+}
+.gg-input:focus {
+  outline: none;
+  border-color: var(--gg-black);
+}
+.gg-input::placeholder {
+  color: var(--gg-grey-400);
+}
+
+.gg-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.gg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-core), var(--font-thai), sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  border-radius: var(--radius-capsule);
+  padding: 13px 22px;
+  min-height: 44px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
+  white-space: nowrap;
+}
+.gg-btn:active {
+  transform: scale(0.975);
+}
+.gg-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gg-btn-primary {
+  background: var(--gg-orange);
+  color: var(--gg-white);
+  border-color: var(--gg-orange);
+}
+.gg-btn-primary:hover:not(:disabled) {
+  background: var(--gg-orange-press);
+  border-color: var(--gg-orange-press);
+}
+
+.gg-btn-ink {
+  background: var(--gg-black);
+  color: var(--gg-pearl);
+  border-color: var(--gg-black);
+}
+.gg-btn-ink:hover:not(:disabled) {
+  background: var(--gg-pebble);
+}
+
+.gg-btn-ghost {
+  background: transparent;
+  color: var(--gg-black);
+  border-color: var(--gg-grey-200);
+}
+.gg-btn-ghost:hover:not(:disabled) {
+  background: var(--gg-orange-wash);
+  border-color: var(--gg-orange);
+}
+
+.gg-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 16px;
+  border-radius: var(--radius-capsule);
+  border: 2px solid var(--gg-grey-200);
+  background: var(--gg-white);
+  color: var(--gg-black);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+
+.gg-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-core), sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border-radius: var(--radius-capsule);
+  color: var(--gg-white);
+}
+
+.gg-progress {
+  height: 10px;
+  border-radius: var(--radius-capsule);
+  background: var(--gg-grey-100);
+  overflow: hidden;
+}
+.gg-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-capsule);
+  transition: width var(--dur-slow) var(--ease-standard);
+}
+
+.gg-toast {
+  background: var(--gg-white);
+  border: 2px solid var(--gg-black);
+  border-radius: var(--radius-card);
+  padding: 13px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: var(--shadow-lift);
+  animation: gg-toast-in var(--dur-slow) var(--ease-standard);
+}
+.gg-toast-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--gg-orange);
+  flex-shrink: 0;
+}
+@keyframes gg-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Hide the number-input spinner so numeric fields read cleanly at large size. */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
 }
