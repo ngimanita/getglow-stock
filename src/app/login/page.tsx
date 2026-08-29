@@ -1,6 +1,10 @@
 import { loginUsersList } from '@/lib/actions/auth';
 import { LoginForm } from './login-form';
 
+// Reads the live user list from the DB — must never be statically
+// prerendered at build time (the build environment can't reach the DB).
+export const dynamic = 'force-dynamic';
+
 export default async function LoginPage() {
   const users = await loginUsersList();
 
