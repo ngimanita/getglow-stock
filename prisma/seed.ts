@@ -16,7 +16,7 @@
 // something to show; their usage rates are the prototype's own placeholders
 // and should be corrected by an early stock count.
 
-import { PrismaClient, ProductType, UserRole } from '@prisma/client';
+import { PrismaClient, UserRole } from '@prisma/client';
 import { hashPin } from '../src/lib/auth';
 
 const prisma = new PrismaClient();
@@ -64,7 +64,9 @@ async function main() {
   const nx200 = await prisma.product.create({
     data: {
       name: 'Neuronox 200U',
-      type: ProductType.botox,
+      category: 'โบท็อกซ์',
+      unitWord: 'ขวด',
+      isMachine: false,
       unitsPer: 200,
       onHand: 33,
       usagePerMonth: 3.2, // bootstrapped from (50-33)/158d*30 — see prisma/seed.ts header
@@ -98,7 +100,9 @@ async function main() {
   const nx100 = await prisma.product.create({
     data: {
       name: 'Neuronox 100U',
-      type: ProductType.botox,
+      category: 'โบท็อกซ์',
+      unitWord: 'ขวด',
+      isMachine: false,
       unitsPer: 100,
       onHand: 45,
       usagePerMonth: 4.6, // (80-45)/226d*30
@@ -132,7 +136,9 @@ async function main() {
   const nmd = await prisma.product.create({
     data: {
       name: 'Neuramis Deep',
-      type: ProductType.filler,
+      category: 'ฟิลเลอร์',
+      unitWord: 'กล่อง',
+      isMachine: false,
       unitsPer: 1,
       onHand: 20,
       usagePerMonth: 14.2, // (190-20)/359d*30
@@ -178,7 +184,9 @@ async function main() {
   const nmg = await prisma.product.create({
     data: {
       name: 'Neuramis Gold',
-      type: ProductType.filler,
+      category: 'ฟิลเลอร์',
+      unitWord: 'กล่อง',
+      isMachine: false,
       unitsPer: 1,
       onHand: 58,
       usagePerMonth: 9.3, // (155-58)/314d*30
@@ -212,7 +220,9 @@ async function main() {
   const nb200 = await prisma.product.create({
     data: {
       name: 'Nabota 200U',
-      type: ProductType.botox,
+      category: 'โบท็อกซ์',
+      unitWord: 'ขวด',
+      isMachine: false,
       unitsPer: 200,
       onHand: 41,
       usagePerMonth: 2, // no purchase date to bootstrap from — carried from initial estimate, correct on next count
@@ -246,7 +256,9 @@ async function main() {
   const nb100 = await prisma.product.create({
     data: {
       name: 'Nabota 100U',
-      type: ProductType.botox,
+      category: 'โบท็อกซ์',
+      unitWord: 'ขวด',
+      isMachine: false,
       unitsPer: 100,
       onHand: 56,
       usagePerMonth: 5,
@@ -292,7 +304,9 @@ async function main() {
   const alg = await prisma.product.create({
     data: {
       name: 'Botox Allergan 100U',
-      type: ProductType.botox,
+      category: 'โบท็อกซ์',
+      unitWord: 'ขวด',
+      isMachine: false,
       unitsPer: 100,
       onHand: 1,
       usagePerMonth: 2.5,
@@ -315,7 +329,9 @@ async function main() {
   const juv = await prisma.product.create({
     data: {
       name: 'Juvederm Volift',
-      type: ProductType.filler,
+      category: 'ฟิลเลอร์',
+      unitWord: 'กล่อง',
+      isMachine: false,
       unitsPer: 1,
       onHand: 5,
       usagePerMonth: 4,
@@ -338,7 +354,9 @@ async function main() {
   const res = await prisma.product.create({
     data: {
       name: 'Restylane Lyft',
-      type: ProductType.filler,
+      category: 'ฟิลเลอร์',
+      unitWord: 'กล่อง',
+      isMachine: false,
       unitsPer: 1,
       onHand: 9,
       usagePerMonth: 3,
@@ -361,7 +379,9 @@ async function main() {
   const rej = await prisma.product.create({
     data: {
       name: 'Rejuran Healer',
-      type: ProductType.other,
+      category: 'อื่น ๆ',
+      unitWord: 'ชิ้น',
+      isMachine: false,
       unitsPer: 1,
       onHand: 12,
       usagePerMonth: 10,
@@ -385,7 +405,9 @@ async function main() {
   const umpt = await prisma.product.create({
     data: {
       name: 'Ultraformer MPT · หัว 1.5 mm',
-      type: ProductType.machine,
+      category: 'หัวเครื่องยกกระชับ',
+      unitWord: 'หัว',
+      isMachine: true,
       unitsPer: 800,
       onHand: 2,
       openShots: 240,
@@ -445,7 +467,9 @@ async function main() {
   const thm = await prisma.product.create({
     data: {
       name: 'Thermage FLX · Tip 4.0',
-      type: ProductType.machine,
+      category: 'หัวเครื่องยกกระชับ',
+      unitWord: 'หัว',
+      isMachine: true,
       unitsPer: 900,
       onHand: 1,
       openShots: 150,

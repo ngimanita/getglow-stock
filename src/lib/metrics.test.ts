@@ -89,20 +89,20 @@ describe('perUnitPrice (rule #1)', () => {
 
 describe('stockUnits', () => {
   it('is just onHand for non-machine products', () => {
-    expect(stockUnits({ type: 'botox', onHand: 33, openShots: 0, unitsPer: 200 })).toBe(33);
+    expect(stockUnits({ isMachine: false, onHand: 33, openShots: 0, unitsPer: 200 })).toBe(33);
   });
   it('is onHand*unitsPer + openShots for machine products', () => {
-    expect(stockUnits({ type: 'machine', onHand: 2, openShots: 240, unitsPer: 800 })).toBe(1840);
+    expect(stockUnits({ isMachine: true, onHand: 2, openShots: 240, unitsPer: 800 })).toBe(1840);
   });
 });
 
 describe('stockText', () => {
   const fmt = (v: number) => formatNumber(v);
   it('reads "{n} {unitWord}" for non-machine', () => {
-    expect(stockText({ type: 'botox', onHand: 33, openShots: 0 }, fmt)).toBe('33 ขวด');
+    expect(stockText({ isMachine: false, onHand: 33, openShots: 0, unitWord: 'ขวด' }, fmt)).toBe('33 ขวด');
   });
   it('reads "{n} หัว + {n} shot" for machine', () => {
-    expect(stockText({ type: 'machine', onHand: 2, openShots: 240 }, fmt)).toBe('2 หัว + 240 shot');
+    expect(stockText({ isMachine: true, onHand: 2, openShots: 240, unitWord: 'หัว' }, fmt)).toBe('2 หัว + 240 shot');
   });
 });
 
@@ -120,7 +120,9 @@ describe('threshold', () => {
 describe('computeMetrics (rules #4-7)', () => {
   it('reproduces the seed dataset\'s Neuronox 100U card exactly (3 ขวด, 11 วัน, สั่งซื้อด่วน)', () => {
     const product: ProductLike = {
-      type: 'botox',
+      category: 'โบท็อกซ์',
+      unitWord: 'ขวด',
+      isMachine: false,
       unitsPer: 100,
       onHand: 3,
       openShots: 0,
@@ -136,7 +138,9 @@ describe('computeMetrics (rules #4-7)', () => {
 
   it('extrapolates deplete/reorder dates from a stale last-count using elapsed days', () => {
     const product: ProductLike = {
-      type: 'filler',
+      category: 'ฟิลเลอร์',
+      unitWord: 'กล่อง',
+      isMachine: false,
       unitsPer: 1,
       onHand: 30,
       openShots: 0,
@@ -152,7 +156,9 @@ describe('computeMetrics (rules #4-7)', () => {
   it('flags "soon" precisely at the threshold+1..threshold+21 boundary', () => {
     // Construct daysLeft to land exactly at threshold+21 (=38) by using a fresh count.
     const product: ProductLike = {
-      type: 'other',
+      category: 'อื่น ๆ',
+      unitWord: 'ชิ้น',
+      isMachine: false,
       unitsPer: 1,
       onHand: 38 * 1, // perDay will be 1/30 -> daysLeftRaw = round(38/(1/30)) is too big; instead set usage so perDay=1
       openShots: 0,
@@ -166,7 +172,9 @@ describe('computeMetrics (rules #4-7)', () => {
 
   it('flags "ok" once daysLeft exceeds threshold+21', () => {
     const product: ProductLike = {
-      type: 'other',
+      category: 'อื่น ๆ',
+      unitWord: 'ชิ้น',
+      isMachine: false,
       unitsPer: 1,
       onHand: 39,
       openShots: 0,
@@ -180,7 +188,9 @@ describe('computeMetrics (rules #4-7)', () => {
 
   it('flags "urgent" once daysLeft drops to the threshold', () => {
     const product: ProductLike = {
-      type: 'other',
+      category: 'อื่น ๆ',
+      unitWord: 'ชิ้น',
+      isMachine: false,
       unitsPer: 1,
       onHand: 17,
       openShots: 0,
@@ -346,11 +356,11 @@ describe('discardLotEffect', () => {
 
 describe('suggestedReorderQty', () => {
   it('suggests ceil(usage*2 - stock), min 1, for non-machine products', () => {
-    expect(suggestedReorderQty({ type: 'botox', unitsPer: 100 }, 6, 3)).toBe(9);
+    expect(suggestedReorderQty({ isMachine: false, unitsPer: 100 }, 6, 3)).toBe(9);
   });
   it('divides by unitsPer for machine products, min 1', () => {
-    expect(suggestedReorderQty({ type: 'machine', unitsPer: 800 }, 900, 2400)).toBe(1); // usage*2-stock is negative -> floors at 1
-    expect(suggestedReorderQty({ type: 'machine', unitsPer: 800 }, 1800, 240)).toBe(5); // ceil((3600-240)/800) = ceil(4.2) = 5
+    expect(suggestedReorderQty({ isMachine: true, unitsPer: 800 }, 900, 2400)).toBe(1); // usage*2-stock is negative -> floors at 1
+    expect(suggestedReorderQty({ isMachine: true, unitsPer: 800 }, 1800, 240)).toBe(5); // ceil((3600-240)/800) = ceil(4.2) = 5
   });
 });
 

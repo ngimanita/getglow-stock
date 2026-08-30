@@ -15,7 +15,7 @@ export async function GET() {
   const t = today();
   const rows = products.map((p) => {
     const m = M.computeMetrics(p, settings, t);
-    return [p.name, p.type, M.stockUnits(p), M.countWord(p.type), m.usage, m.daysLeft, toISODate(m.deplete), toISODate(m.reorder), M.statusLabel(m.status)];
+    return [p.name, p.category, M.stockUnits(p), M.countWord(p), m.usage, m.daysLeft, toISODate(m.deplete), toISODate(m.reorder), M.statusLabel(m.status)];
   });
 
   await logAudit(session, 'export.stock_csv', `${rows.length} products`);

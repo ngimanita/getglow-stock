@@ -6,7 +6,7 @@ import { getSession } from '@/lib/auth';
 import { requireOwner } from '@/lib/permissions';
 import { logAudit } from '@/lib/audit';
 import { hashPin } from '@/lib/auth';
-import { ProductType, UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 
 export interface ActionState {
   error?: string;
@@ -32,26 +32,21 @@ export async function updateSettingsAction(_prev: ActionState, formData: FormDat
   return { success: 'บันทึกการตั้งค่าแล้ว' };
 }
 
-const TYPE_MAP: Record<string, ProductType> = {
-  botox: ProductType.botox,
-  filler: ProductType.filler,
-  other: ProductType.other,
-  machine: ProductType.machine,
-};
-
 export async function addProductAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const session = await getSession();
   requireOwner(session);
 
   const name = String(formData.get('name') || '').trim();
-  const type = TYPE_MAP[String(formData.get('type') || 'botox')] ?? ProductType.botox;
+  const category = String(formData.get('category') || '').trim() || 'อื่น ๆ';
+  const unitWord = String(formData.get('unitWord') || '').trim() || 'ชิ้น';
+  const isMachine = formData.get('isMachine') === 'on';
   const unitsPer = Math.max(1, Number(formData.get('unitsPer')) || 1);
   const usagePerMonth = Math.max(0.1, Number(formData.get('usagePerMonth')) || 1);
 
   if (!name) return { error: 'พิมพ์ชื่อสินค้าก่อนนะ' };
 
   await prisma.product.create({
-    data: { name, type, unitsPer, usagePerMonth, onHand: 0, openShots: 0, lastCountAt: new Date() },
+    data: { name, category, unitWord, isMachine, unitsPer, usagePerMonth, onHand: 0, openShots: 0, lastCountAt: new Date() },
   });
   await logAudit(session, 'product.create', `เพิ่มสินค้า ${name}`);
 

@@ -46,8 +46,8 @@ export default async function PriceComparePage({
           <div className="gg-panel mb-5">
             <p className="font-bold text-[18px] mb-1">{view.product.name}</p>
             <p className="text-[13px] text-[var(--text-muted)] mb-4">
-              ราคาต่อ 1 {consumeWord(view.product.type)}
-              {isMachine(view.product.type) ? ' (ราคาหัว ÷ shot ต่อหัว)' : 'ยา'} ย้อนหลังตามล็อตที่ซื้อ
+              ราคาต่อ 1 {consumeWord(view.product)}
+              {isMachine(view.product) ? ' (ราคาหัว ÷ shot ต่อหัว)' : 'ยา'} ย้อนหลังตามล็อตที่ซื้อ
             </p>
             <div className="grid grid-cols-3 gap-3 mb-6">
               <StatBox label="ต่ำสุดที่เคยซื้อ" value={view.stats.min} color="#2E7D5B" />

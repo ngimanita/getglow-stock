@@ -39,13 +39,6 @@ const STATUS_BG: Record<M.ProductStatus, string> = {
   ok: 'rgba(46,125,91,.08)',
 };
 
-function kindLabel(type: M.ProductType): string {
-  if (type === 'botox') return 'โบท็อกซ์';
-  if (type === 'filler') return 'ฟิลเลอร์';
-  if (type === 'machine') return 'เครื่อง · นับเป็น shot';
-  return 'อื่น ๆ';
-}
-
 // ---- dashboard --------------------------------------------------------
 
 export interface StatCard {
@@ -95,13 +88,13 @@ export async function getDashboard(role: Role): Promise<{ rows: DashboardRow[]; 
     const nonDiscarded = M.nonDiscardedLotsByPurchaseDate(lots, p.id);
     const lastLot = nonDiscarded[nonDiscarded.length - 1];
     const pu = lastLot ? M.perUnitPrice(lastLot, p) : 0;
-    const uw = M.unitWord(p.type);
-    const cw = M.consumeWord(p.type);
-    const isM = M.isMachine(p.type);
+    const uw = M.unitWord(p);
+    const cw = M.consumeWord(p);
+    const isM = M.isMachine(p);
     return {
       id: p.id,
       name: p.name,
-      meta: kindLabel(p.type) + ' · ' + (p.unitsPer > 1 ? fmtNum(p.unitsPer) + ' ' + cw + ' / ' + uw : '1 ' + uw),
+      meta: p.category + ' · ' + (p.unitsPer > 1 ? fmtNum(p.unitsPer) + ' ' + cw + ' / ' + uw : '1 ' + uw),
       statusLabel: M.statusLabel(m.status),
       statusColor: STATUS_COLOR[m.status],
       borderColor: STATUS_BORDER[m.status],
@@ -113,7 +106,7 @@ export async function getDashboard(role: Role): Promise<{ rows: DashboardRow[]; 
           ? '= ' + fmtNum(p.onHand * p.unitsPer) + ' ยูนิต'
           : 'พร้อมใช้',
       daysLeftText: m.daysLeft + ' วัน',
-      usageText: fmtNum(m.usage) + ' ' + M.countWord(p.type) + '/เดือน',
+      usageText: fmtNum(m.usage) + ' ' + M.countWord(p) + '/เดือน',
       pct: Math.max(3, Math.min(100, Math.round((m.daysLeft / 90) * 100))),
       depleteText: fmtDate(m.deplete),
       reorderText: M.reorderDateText(m.reorder, t, fmtDate),
@@ -181,10 +174,10 @@ export async function getReceiveLotView(productId: string): Promise<ReceiveLotVi
     recentLots: recent.map((l) => ({
       dateText: l.purchaseDate ? fmtDate(l.purchaseDate) : 'ไม่ระบุวันที่ซื้อ',
       supplier: l.supplierName,
-      qtyText: fmtNum(l.qty) + ' ' + M.unitWord(product.type) + ' · เหลือ ' + fmtNum(l.remaining),
+      qtyText: fmtNum(l.qty) + ' ' + M.unitWord(product) + ' · เหลือ ' + fmtNum(l.remaining),
       expiryText: l.expiryDate ? fmtDate(l.expiryDate) : 'ไม่ระบุวันหมดอายุ',
-      perUnitText: formatBaht(M.perUnitPrice(l, product), 2) + '/' + M.consumeWord(product.type),
-      priceText: formatBaht(l.unitPrice) + '/' + M.unitWord(product.type),
+      perUnitText: formatBaht(M.perUnitPrice(l, product), 2) + '/' + M.consumeWord(product),
+      priceText: formatBaht(l.unitPrice) + '/' + M.unitWord(product),
     })),
     cheapestEverPerUnit: hist.length ? Math.min(...hist) : null,
   };
@@ -204,7 +197,7 @@ export async function getStockCountView(productId: string): Promise<StockCountVi
   if (!product) return null;
   const counts = await prisma.stockCount.findMany({ where: { productId }, orderBy: { countedAt: 'asc' } });
   const prev = counts[counts.length - 1];
-  const cw = M.countWord(product.type);
+  const cw = M.countWord(product);
   return {
     product,
     prevCountedAt: prev ? prev.countedAt : product.lastCountAt,
@@ -233,7 +226,7 @@ export function previewStockCount(input: {
   openShotsCounted: number;
   t: Date;
 }) {
-  const isM = M.isMachine(input.product.type);
+  const isM = M.isMachine(input.product);
   const counted = M.resolveCountedQty({
     isMachine: isM,
     unitsPer: input.product.unitsPer,
@@ -308,7 +301,7 @@ export async function getPriceCompareView(productId: string): Promise<PriceCompa
       return {
         dateText: l.purchaseDate ? fmtDate(l.purchaseDate) : 'ไม่ระบุวันที่',
         supplier: l.supplierName,
-        qtyText: fmtNum(l.qty) + ' ' + M.unitWord(product.type),
+        qtyText: fmtNum(l.qty) + ' ' + M.unitWord(product),
         priceText: formatBaht(l.unitPrice),
         perUnitText: formatBaht(v, 2),
         tag: tag === 'min' ? '★ ต่ำสุด' : tag === 'above-average' ? '▲' : '',
@@ -382,7 +375,7 @@ export async function getAlerts(role: Role) {
           m.daysLeft +
           ' วัน · จุดสั่งซื้อ ' +
           (M.reorderDateText(m.reorder, t, fmtDate) === 'สั่งเลยวันนี้' ? 'เลยมาแล้ว' : fmtDate(m.reorder)),
-        suggest: fmtNum(need) + ' ' + M.unitWord(p.type),
+        suggest: fmtNum(need) + ' ' + M.unitWord(p),
       };
     });
 
@@ -404,7 +397,7 @@ export async function getAlerts(role: Role) {
         ' · เหลือ ' +
         fmtNum(x.lot.remaining) +
         ' ' +
-        M.unitWord(p?.type ?? 'other'),
+        (p ? M.unitWord(p) : 'ชิ้น'),
       daysText: over ? 'หมดอายุแล้ว ' + Math.abs(x.daysUntilExpiry) + ' วัน' : 'อีก ' + x.daysUntilExpiry + ' วัน',
       expiryText: fmtDate(x.lot.expiryDate),
       canDiscard: over,
@@ -422,7 +415,7 @@ export async function getAlerts(role: Role) {
     const p = productsById.get(l.productId);
     const qty = l.qtyDiscarded ?? l.remaining;
     return {
-      label: (p?.name ?? '—') + ' · ' + fmtNum(qty) + ' ' + M.unitWord(p?.type ?? 'other'),
+      label: (p?.name ?? '—') + ' · ' + fmtNum(qty) + ' ' + (p ? M.unitWord(p) : 'ชิ้น'),
       expiryText: l.expiryDate ? fmtDate(l.expiryDate) : 'ไม่ระบุ',
       lossText: role === 'owner' ? formatBaht(Math.round(qty * l.unitPrice)) : 'ซ่อนทุน',
     };
@@ -461,12 +454,19 @@ export async function getSettingsPageData() {
     products: products.map((p) => ({
       id: p.id,
       name: p.name,
-      unitText: (p.unitsPer > 1 ? fmtNum(p.unitsPer) + ' ' + M.consumeWord(p.type) + ' / ' : '') + M.unitWord(p.type),
+      category: p.category,
+      unitText: (p.unitsPer > 1 ? fmtNum(p.unitsPer) + ' ' + M.consumeWord(p) + ' / ' : '') + M.unitWord(p),
       onHandText: M.stockText(p, fmtNum),
-      usageText: fmtNum(p.usagePerMonth) + ' ' + M.countWord(p.type),
+      usageText: fmtNum(p.usagePerMonth) + ' ' + M.countWord(p),
       archived: p.archived,
     })),
   };
+}
+
+/** Distinct categories already in use, for the Add Product form's autocomplete (same pattern as suppliers/staff). */
+export async function getCategoryNames(): Promise<string[]> {
+  const rows = await prisma.product.findMany({ distinct: ['category'], select: { category: true }, orderBy: { category: 'asc' } });
+  return rows.map((r) => r.category);
 }
 
 export async function getUsersList() {

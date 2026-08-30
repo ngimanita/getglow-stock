@@ -28,9 +28,9 @@ export function StockCountForm({
   const { showToast } = useToast();
   const [state, formAction, pending] = useActionState<SaveCountState, FormData>(saveCountAction, {});
 
-  const isM = M.isMachine(view.product.type);
-  const cw = M.countWord(view.product.type);
-  const uw = M.unitWord(view.product.type);
+  const isM = M.isMachine(view.product);
+  const cw = M.countWord(view.product);
+  const uw = M.unitWord(view.product);
   const cPerHead = Math.max(1, view.product.unitsPer);
 
   const [countedDate, setCountedDate] = useState(toISODate(today()));

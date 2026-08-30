@@ -35,7 +35,7 @@ export async function saveCountAction(_prev: SaveCountState, formData: FormData)
   const prevCountedAt = prevCount ? prevCount.countedAt : product.lastCountAt;
   const prevQty = prevCount ? prevCount.qty : stockUnits(product);
 
-  const isM = isMachine(product.type);
+  const isM = isMachine(product);
   const lotsInWindow = await prisma.lot.findMany({
     where: { productId, purchaseDate: { gt: prevCountedAt, lte: countedAt } },
   });
@@ -78,7 +78,7 @@ export async function saveCountAction(_prev: SaveCountState, formData: FormData)
 
   const message = isM
     ? `อัปเดตยอด ${product.name} เป็น ${formatNumber(headsCounted)} หัว + ${formatNumber(openShotsCounted)} shot · นับโดย ${countedByName}`
-    : `อัปเดตยอด ${product.name} เป็น ${formatNumber(counted)} ${unitWord(product.type)} · นับโดย ${countedByName}`;
+    : `อัปเดตยอด ${product.name} เป็น ${formatNumber(counted)} ${unitWord(product)} · นับโดย ${countedByName}`;
   await logAudit(session, 'count.create', message);
 
   revalidatePath('/dashboard');

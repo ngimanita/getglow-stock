@@ -1,4 +1,4 @@
-import { getSettingsPageData, getSupplierNames, getUsersList, today } from '@/lib/queries';
+import { getSettingsPageData, getSupplierNames, getUsersList, getCategoryNames, today } from '@/lib/queries';
 import { ScreenHeader } from '@/components/screen-header';
 import {
   ThresholdForm,
@@ -11,10 +11,11 @@ import {
 } from './settings-client';
 
 export default async function SettingsPage() {
-  const [{ settings, threshold, products }, supplierNames, users] = await Promise.all([
+  const [{ settings, threshold, products }, supplierNames, users, categoryNames] = await Promise.all([
     getSettingsPageData(),
     getSupplierNames(),
     getUsersList(),
+    getCategoryNames(),
   ]);
 
   return (
@@ -39,7 +40,7 @@ export default async function SettingsPage() {
         <div className="flex flex-col gap-4">
           <div className="gg-panel">
             <p className="font-bold text-[16px] mb-4">เพิ่มสินค้าใหม่</p>
-            <AddProductForm />
+            <AddProductForm categoryNames={categoryNames} />
           </div>
           <div className="gg-panel">
             <p className="font-bold text-[16px] mb-4">เพิ่มซัพพลายเออร์</p>

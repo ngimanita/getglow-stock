@@ -64,7 +64,7 @@ export async function saveLotAction(_prev: SaveLotState, formData: FormData): Pr
   ]);
 
   const perUnit = perUnitPrice({ unitPrice: price }, { unitsPer });
-  const message = `บันทึกล็อต ${product.name} แล้ว · ${formatNumber(qty)} ${unitWord(product.type)} ที่ ${formatNumber(perUnit, 2)} ฿/ยูนิต`;
+  const message = `บันทึกล็อต ${product.name} แล้ว · ${formatNumber(qty)} ${unitWord(product)} ที่ ${formatNumber(perUnit, 2)} ฿/ยูนิต`;
   await logAudit(session, 'lot.create', message);
 
   revalidatePath('/dashboard');

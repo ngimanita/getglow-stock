@@ -20,7 +20,7 @@ export default async function StockCountPage({
 
   let receivedQtySumToday = 0;
   if (view) {
-    const isM = isMachine(view.product.type);
+    const isM = isMachine(view.product);
     const lotsInWindow = await prisma.lot.findMany({
       where: { productId: view.product.id, purchaseDate: { gt: view.prevCountedAt, lte: today() } },
     });

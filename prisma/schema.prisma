@@ -8,13 +8,6 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-enum ProductType {
-  botox
-  filler
-  other
-  machine
-}
-
 enum UserRole {
   owner
   stock
@@ -23,7 +16,9 @@ enum UserRole {
 model Product {
   id            String   @id @default(cuid())
   name          String
-  type          ProductType
+  category      String   @default("อื่นๆ") // free text: โบท็อกซ์, ฟิลเลอร์, เมโส, ยากิน, ... — user-typed, not a fixed list
+  unitWord      String   @default("ชิ้น") // sales-unit label: ขวด/กล่อง/ชิ้น/หลอด/แผง/... — user-typed
+  isMachine     Boolean  @default(false) // true = shot-tracked device (Ultraformer/Thermage-style heads)
   unitsPer      Int      @default(1) // drug units (or shots) per sales unit; machine: shots per head
   onHand        Float    @default(0) // sales units (vials/boxes/pieces), or unopened heads for machine
   openShots     Int      @default(0) // machine only: shots left in the currently-mounted head

@@ -12,11 +12,15 @@
 
 import { addDays, daysBetween } from './format';
 
-export type ProductType = 'botox' | 'filler' | 'other' | 'machine';
 export type ProductStatus = 'urgent' | 'soon' | 'ok';
 
 export interface ProductLike {
-  type: ProductType;
+  /** Free-text, user-typed (โบท็อกซ์, ฟิลเลอร์, เมโส, ยากิน, ...) — display/grouping only, never branches math. */
+  category: string;
+  /** Free-text sales-unit label (ขวด/กล่อง/ชิ้น/หลอด/แผง/...). */
+  unitWord: string;
+  /** The only field that changes calculation behavior: shot-tracked device vs plain countable unit. */
+  isMachine: boolean;
   unitsPer: number;
   onHand: number;
   openShots: number;
@@ -55,44 +59,44 @@ export interface StockCountLike {
 
 // ---- unit vocabulary --------------------------------------------------
 
-export function isMachine(type: ProductType): boolean {
-  return type === 'machine';
+export function isMachine(p: Pick<ProductLike, 'isMachine'>): boolean {
+  return p.isMachine;
 }
 
-/** Sales unit word — the unit staff physically count. */
-export function unitWord(type: ProductType): string {
-  if (type === 'botox') return 'ขวด';
-  if (type === 'filler') return 'กล่อง';
-  if (type === 'machine') return 'หัว';
-  return 'ชิ้น';
+/** Sales unit word — the unit staff physically count. Now a stored, user-typed field. */
+export function unitWord(p: Pick<ProductLike, 'unitWord'>): string {
+  return p.unitWord;
 }
 
 /** Drug unit word — what price-per-unit is expressed in. */
-export function consumeWord(type: ProductType): string {
-  return isMachine(type) ? 'shot' : 'ยูนิต';
+export function consumeWord(p: Pick<ProductLike, 'isMachine'>): string {
+  return isMachine(p) ? 'shot' : 'ยูนิต';
 }
 
 /** The unit a stock count is entered in — same as sales unit, except machine uses shots. */
-export function countWord(type: ProductType): string {
-  return isMachine(type) ? 'shot' : unitWord(type);
+export function countWord(p: Pick<ProductLike, 'isMachine' | 'unitWord'>): string {
+  return isMachine(p) ? 'shot' : unitWord(p);
 }
 
 // ---- rule #1: stock quantity & price per drug unit --------------------
 
 /** Total quantity on hand in "countable" units (shots for machine, sales units otherwise). */
-export function stockUnits(p: Pick<ProductLike, 'type' | 'onHand' | 'openShots' | 'unitsPer'>): number {
-  if (isMachine(p.type)) {
+export function stockUnits(p: Pick<ProductLike, 'isMachine' | 'onHand' | 'openShots' | 'unitsPer'>): number {
+  if (isMachine(p)) {
     return (Number(p.onHand) || 0) * Math.max(1, Number(p.unitsPer) || 1) + (Number(p.openShots) || 0);
   }
   return Number(p.onHand) || 0;
 }
 
 /** Human-readable on-hand text, e.g. "3 ขวด" or "2 หัว + 240 shot". */
-export function stockText(p: Pick<ProductLike, 'type' | 'onHand' | 'openShots'>, fmtNum: (v: number) => string): string {
-  if (isMachine(p.type)) {
+export function stockText(
+  p: Pick<ProductLike, 'isMachine' | 'onHand' | 'openShots' | 'unitWord'>,
+  fmtNum: (v: number) => string,
+): string {
+  if (isMachine(p)) {
     return `${fmtNum(p.onHand)} หัว + ${fmtNum(p.openShots || 0)} shot`;
   }
-  return `${fmtNum(p.onHand)} ${unitWord(p.type)}`;
+  return `${fmtNum(p.onHand)} ${unitWord(p)}`;
 }
 
 /** Price per 1 drug unit for a lot — what the owner negotiates on. Rule #1. */
@@ -120,7 +124,7 @@ export interface ProductMetrics {
  * on-hand + stored usage rate, extrapolated to today. Rules #4-7.
  */
 export function computeMetrics(
-  product: Pick<ProductLike, 'type' | 'onHand' | 'openShots' | 'unitsPer' | 'usagePerMonth' | 'lastCountAt'>,
+  product: Pick<ProductLike, 'isMachine' | 'onHand' | 'openShots' | 'unitsPer' | 'usagePerMonth' | 'lastCountAt'>,
   settings: SettingsLike,
   today: Date,
 ): ProductMetrics {
@@ -272,11 +276,11 @@ export function discardLotEffect(lot: Pick<LotLike, 'remaining'>, productOnHand:
 
 /** Suggested reorder quantity shown on the alerts screen. */
 export function suggestedReorderQty(
-  product: Pick<ProductLike, 'type' | 'unitsPer'>,
+  product: Pick<ProductLike, 'isMachine' | 'unitsPer'>,
   usage: number,
   stock: number,
 ): number {
-  if (isMachine(product.type)) {
+  if (isMachine(product)) {
     return Math.max(1, Math.ceil((usage * 2 - stock) / Math.max(1, Number(product.unitsPer) || 1)));
   }
   return Math.max(1, Math.ceil(usage * 2 - stock));

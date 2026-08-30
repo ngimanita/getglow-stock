@@ -39,8 +39,8 @@ export function ReceiveLotForm({
     }
   }, [state.success, showToast]);
 
-  const uw = unitWord(view.product.type);
-  const cw = consumeWord(view.product.type);
+  const uw = unitWord(view.product);
+  const cw = consumeWord(view.product);
   const effectiveUnitsPer = Math.max(1, unitsPer || 1);
   const perUnit = price / effectiveUnitsPer;
   const totalValue = qty * price;
