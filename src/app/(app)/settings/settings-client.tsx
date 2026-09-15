@@ -18,6 +18,44 @@ const CATEGORY_PRESETS = ['โบท็อกซ์', 'ฟิลเลอร์'
 const UNIT_WORD_PRESETS = ['ขวด', 'กล่อง', 'หัว', 'หลอด', 'แผง', 'ชิ้น'];
 const SUB_UNIT_WORD_PRESETS = ['shot', 'ชิ้น', 'เม็ด', 'มล.'];
 
+/** Clear on/off switch — replaces ambiguous "เก็บเข้าคลัง"/"เปิดใช้งาน"-style buttons whose label changes with state. */
+function ToggleSwitch({
+  on,
+  onToggle,
+  disabled,
+  labelOn,
+  labelOff,
+}: {
+  on: boolean;
+  onToggle: () => void;
+  disabled?: boolean;
+  labelOn: string;
+  labelOff: string;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onToggle}
+      className="inline-flex items-center gap-2 shrink-0"
+      style={{ opacity: disabled ? 0.6 : 1, cursor: disabled ? 'default' : 'pointer' }}
+    >
+      <span
+        className="relative inline-block rounded-full shrink-0"
+        style={{ width: 36, height: 20, background: on ? 'var(--gg-orange)' : 'var(--gg-grey-200)', transition: 'background 120ms' }}
+      >
+        <span
+          className="absolute rounded-full bg-white"
+          style={{ top: 2, width: 16, height: 16, left: on ? 18 : 2, transition: 'left 120ms', boxShadow: '0 1px 2px rgba(0,0,0,.2)' }}
+        />
+      </span>
+      <span className="text-[12px] font-medium whitespace-nowrap" style={{ color: on ? 'var(--gg-black)' : 'var(--text-muted)' }}>
+        {on ? labelOn : labelOff}
+      </span>
+    </button>
+  );
+}
+
 function useToastOnResult(state: ActionState) {
   const { showToast } = useToast();
   useEffect(() => {
@@ -203,21 +241,23 @@ export function ProductTable({ products }: { products: ProductRow[] }) {
                 <td className="py-2.5">{p.onHandText}</td>
                 <td className="py-2.5">{p.usageText}</td>
                 <td className="py-2.5 text-right whitespace-nowrap">
-                  <button onClick={() => setEditingId(p.id)} className="gg-btn gg-btn-ghost !py-1.5 !px-3 !text-[12px] !min-h-[32px] mr-1.5">
-                    แก้ไข
-                  </button>
-                  <button
-                    disabled={pending}
-                    onClick={() =>
-                      startTransition(async () => {
-                        const r = await setProductArchivedAction(p.id, !p.archived);
-                        if (r.success) showToast(r.success);
-                      })
-                    }
-                    className="gg-btn gg-btn-ghost !py-1.5 !px-3 !text-[12px] !min-h-[32px]"
-                  >
-                    {p.archived ? 'นำกลับมาใช้' : 'เก็บเข้าคลัง'}
-                  </button>
+                  <div className="flex items-center justify-end gap-3">
+                    <ToggleSwitch
+                      on={!p.archived}
+                      disabled={pending}
+                      labelOn="ใช้งานอยู่"
+                      labelOff="เก็บเข้าคลังแล้ว"
+                      onToggle={() =>
+                        startTransition(async () => {
+                          const r = await setProductArchivedAction(p.id, !p.archived);
+                          if (r.success) showToast(r.success);
+                        })
+                      }
+                    />
+                    <button onClick={() => setEditingId(p.id)} className="gg-btn gg-btn-ghost !py-1.5 !px-3 !text-[12px] !min-h-[32px]">
+                      แก้ไข
+                    </button>
+                  </div>
                 </td>
               </tr>
             ),
@@ -371,18 +411,18 @@ export function UserTable({ users }: { users: { id: string; displayName: string;
                 ตั้ง PIN ใหม่
               </button>
             )}
-            <button
+            <ToggleSwitch
+              on={u.active}
               disabled={pending}
-              onClick={() =>
+              labelOn="ใช้งานอยู่"
+              labelOff="ปิดใช้งานแล้ว"
+              onToggle={() =>
                 startTransition(async () => {
                   const r = await setUserActiveAction(u.id, !u.active);
                   if (r.success) showToast(r.success);
                 })
               }
-              className="gg-btn gg-btn-ghost !py-1.5 !px-3 !text-[12px] !min-h-[32px]"
-            >
-              {u.active ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}
-            </button>
+            />
           </div>
         </li>
       ))}
