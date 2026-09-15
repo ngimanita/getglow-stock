@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState, useTransition } from 'react';
 import {
   updateSettingsAction,
   addProductAction,
+  updateProductAction,
   addSupplierAction,
   addUserAction,
   resetPinAction,
@@ -15,6 +16,7 @@ import { useToast } from '@/components/toast';
 
 const CATEGORY_PRESETS = ['โบท็อกซ์', 'ฟิลเลอร์', 'เมโส', 'หัวเครื่องยกกระชับ', 'ยากิน', 'ยาทา', 'อุปกรณ์ใช้แล้วทิ้ง', 'อื่น ๆ'];
 const UNIT_WORD_PRESETS = ['ขวด', 'กล่อง', 'หัว', 'หลอด', 'แผง', 'ชิ้น'];
+const SUB_UNIT_WORD_PRESETS = ['shot', 'ชิ้น', 'เม็ด', 'มล.'];
 
 function useToastOnResult(state: ActionState) {
   const { showToast } = useToast();
@@ -80,6 +82,7 @@ export function ExportButtons() {
 export function AddProductForm({ categoryNames }: { categoryNames: string[] }) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(addProductAction, {});
   const { showToast } = useToast();
+  const [tracksSubunit, setTracksSubunit] = useState(false);
   useEffect(() => {
     if (state.success) showToast(state.success);
     if (state.error) showToast(state.error);
@@ -107,7 +110,7 @@ export function AddProductForm({ categoryNames }: { categoryNames: string[] }) {
         </div>
         <div>
           <label className="gg-label" htmlFor="np-unitWord">
-            หน่วยนับ
+            หน่วยนับ (ที่ซื้อเข้า)
           </label>
           <input id="np-unitWord" name="unitWord" list="np-unit-list" placeholder="เช่น ขวด, กล่อง, หลอด, แผง" className="gg-input" />
           <datalist id="np-unit-list">
@@ -117,24 +120,37 @@ export function AddProductForm({ categoryNames }: { categoryNames: string[] }) {
           </datalist>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="gg-label" htmlFor="np-unitsPer">
-            ยูนิต/shot ต่อ 1 หน่วย
-          </label>
-          <input id="np-unitsPer" name="unitsPer" type="number" min={1} defaultValue={1} className="gg-input" />
-        </div>
-        <div>
-          <label className="gg-label" htmlFor="np-usage">
-            ใช้ต่อเดือน (ประมาณการเริ่มต้น)
-          </label>
-          <input id="np-usage" name="usagePerMonth" type="number" min={0.1} step={0.1} defaultValue={1} className="gg-input" />
-        </div>
+      <div>
+        <label className="gg-label" htmlFor="np-usage">
+          ใช้ต่อเดือน (ประมาณการเริ่มต้น)
+        </label>
+        <input id="np-usage" name="usagePerMonth" type="number" min={0.1} step={0.1} defaultValue={1} className="gg-input" />
       </div>
       <label className="flex items-center gap-2 text-[14px] font-medium cursor-pointer">
-        <input type="checkbox" name="isMachine" className="w-4 h-4" />
-        เป็นเครื่อง (นับเป็น shot — เช่น หัวเครื่องยกกระชับ)
+        <input type="checkbox" name="isMachine" checked={tracksSubunit} onChange={(e) => setTracksSubunit(e.target.checked)} className="w-4 h-4" />
+        นับแบบ &quot;กล่อง + ชิ้นที่แกะใช้แล้ว&quot; (เช่น หัวเครื่องยกกระชับ, เข็ม, กระบอกฉีดยา)
       </label>
+      {tracksSubunit && (
+        <div className="grid grid-cols-2 gap-3 rounded-2xl p-3.5" style={{ background: 'var(--gg-pearl)' }}>
+          <div>
+            <label className="gg-label" htmlFor="np-unitsPer">
+              ชิ้นต่อ 1 หน่วยที่ซื้อเข้า
+            </label>
+            <input id="np-unitsPer" name="unitsPer" type="number" min={1} defaultValue={1} className="gg-input" />
+          </div>
+          <div>
+            <label className="gg-label" htmlFor="np-subUnitWord">
+              หน่วยชิ้นย่อย
+            </label>
+            <input id="np-subUnitWord" name="subUnitWord" list="np-subunit-list" placeholder="เช่น shot, ชิ้น, เม็ด" className="gg-input" />
+            <datalist id="np-subunit-list">
+              {SUB_UNIT_WORD_PRESETS.map((u) => (
+                <option key={u} value={u} />
+              ))}
+            </datalist>
+          </div>
+        </div>
+      )}
       <button type="submit" disabled={pending} className="gg-btn gg-btn-primary w-full">
         {pending ? 'กำลังเพิ่ม…' : 'เพิ่มสินค้า'}
       </button>
@@ -142,13 +158,25 @@ export function AddProductForm({ categoryNames }: { categoryNames: string[] }) {
   );
 }
 
-export function ProductTable({
-  products,
-}: {
-  products: { id: string; name: string; category: string; unitText: string; onHandText: string; usageText: string; archived: boolean }[];
-}) {
+export interface ProductRow {
+  id: string;
+  name: string;
+  category: string;
+  unitWord: string;
+  isMachine: boolean;
+  subUnitWord: string;
+  unitsPer: number;
+  usagePerMonth: number;
+  unitText: string;
+  onHandText: string;
+  usageText: string;
+  archived: boolean;
+}
+
+export function ProductTable({ products }: { products: ProductRow[] }) {
   const [pending, startTransition] = useTransition();
   const { showToast } = useToast();
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   return (
     <div className="overflow-x-auto">
@@ -164,32 +192,104 @@ export function ProductTable({
           </tr>
         </thead>
         <tbody>
-          {products.map((p) => (
-            <tr key={p.id} className="border-b border-[var(--line-hairline)] last:border-0" style={{ opacity: p.archived ? 0.5 : 1 }}>
-              <td className="py-2.5 font-medium">{p.name}</td>
-              <td className="py-2.5 text-[var(--text-muted)]">{p.category}</td>
-              <td className="py-2.5">{p.unitText}</td>
-              <td className="py-2.5">{p.onHandText}</td>
-              <td className="py-2.5">{p.usageText}</td>
-              <td className="py-2.5 text-right">
-                <button
-                  disabled={pending}
-                  onClick={() =>
-                    startTransition(async () => {
-                      const r = await setProductArchivedAction(p.id, !p.archived);
-                      if (r.success) showToast(r.success);
-                    })
-                  }
-                  className="gg-btn gg-btn-ghost !py-1.5 !px-3 !text-[12px] !min-h-[32px]"
-                >
-                  {p.archived ? 'นำกลับมาใช้' : 'เก็บเข้าคลัง'}
-                </button>
-              </td>
-            </tr>
-          ))}
+          {products.map((p) =>
+            editingId === p.id ? (
+              <ProductEditRow key={p.id} product={p} onDone={() => setEditingId(null)} />
+            ) : (
+              <tr key={p.id} className="border-b border-[var(--line-hairline)] last:border-0" style={{ opacity: p.archived ? 0.5 : 1 }}>
+                <td className="py-2.5 font-medium">{p.name}</td>
+                <td className="py-2.5 text-[var(--text-muted)]">{p.category}</td>
+                <td className="py-2.5">{p.unitText}</td>
+                <td className="py-2.5">{p.onHandText}</td>
+                <td className="py-2.5">{p.usageText}</td>
+                <td className="py-2.5 text-right whitespace-nowrap">
+                  <button onClick={() => setEditingId(p.id)} className="gg-btn gg-btn-ghost !py-1.5 !px-3 !text-[12px] !min-h-[32px] mr-1.5">
+                    แก้ไข
+                  </button>
+                  <button
+                    disabled={pending}
+                    onClick={() =>
+                      startTransition(async () => {
+                        const r = await setProductArchivedAction(p.id, !p.archived);
+                        if (r.success) showToast(r.success);
+                      })
+                    }
+                    className="gg-btn gg-btn-ghost !py-1.5 !px-3 !text-[12px] !min-h-[32px]"
+                  >
+                    {p.archived ? 'นำกลับมาใช้' : 'เก็บเข้าคลัง'}
+                  </button>
+                </td>
+              </tr>
+            ),
+          )}
         </tbody>
       </table>
     </div>
+  );
+}
+
+function ProductEditRow({ product, onDone }: { product: ProductRow; onDone: () => void }) {
+  const [state, formAction, pending] = useActionState<ActionState, FormData>(updateProductAction, {});
+  const { showToast } = useToast();
+  const [tracksSubunit, setTracksSubunit] = useState(product.isMachine);
+
+  useEffect(() => {
+    if (state.success) {
+      showToast(state.success);
+      onDone();
+    }
+    if (state.error) showToast(state.error);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.success, state.error]);
+
+  return (
+    <tr className="border-b border-[var(--line-hairline)]" style={{ background: 'var(--gg-pearl)' }}>
+      <td colSpan={6} className="py-3 px-2">
+        <form action={formAction} className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))' }}>
+          <input type="hidden" name="id" value={product.id} />
+          <div>
+            <label className="gg-label">ชื่อสินค้า</label>
+            <input name="name" defaultValue={product.name} required className="gg-input !py-1.5" />
+          </div>
+          <div>
+            <label className="gg-label">ประเภท</label>
+            <input name="category" defaultValue={product.category} className="gg-input !py-1.5" />
+          </div>
+          <div>
+            <label className="gg-label">หน่วยนับ</label>
+            <input name="unitWord" defaultValue={product.unitWord} className="gg-input !py-1.5" />
+          </div>
+          <div>
+            <label className="gg-label">ใช้ต่อเดือน</label>
+            <input name="usagePerMonth" type="number" min={0.1} step={0.1} defaultValue={product.usagePerMonth} className="gg-input !py-1.5" />
+          </div>
+          <label className="flex items-center gap-2 text-[13px] font-medium cursor-pointer" style={{ gridColumn: '1 / -1' }}>
+            <input type="checkbox" name="isMachine" checked={tracksSubunit} onChange={(e) => setTracksSubunit(e.target.checked)} className="w-4 h-4" />
+            นับแบบ &quot;กล่อง + ชิ้นที่แกะใช้แล้ว&quot;
+          </label>
+          {tracksSubunit && (
+            <>
+              <div>
+                <label className="gg-label">ชิ้นต่อ 1 หน่วย</label>
+                <input name="unitsPer" type="number" min={1} defaultValue={product.unitsPer} className="gg-input !py-1.5" />
+              </div>
+              <div>
+                <label className="gg-label">หน่วยชิ้นย่อย</label>
+                <input name="subUnitWord" defaultValue={product.subUnitWord} className="gg-input !py-1.5" />
+              </div>
+            </>
+          )}
+          <div className="flex gap-2 items-end" style={{ gridColumn: '1 / -1' }}>
+            <button type="submit" disabled={pending} className="gg-btn gg-btn-primary !py-1.5 !px-3 !text-[12px] !min-h-[32px]">
+              {pending ? 'กำลังบันทึก…' : 'บันทึก'}
+            </button>
+            <button type="button" onClick={onDone} className="gg-btn gg-btn-ghost !py-1.5 !px-3 !text-[12px] !min-h-[32px]">
+              ยกเลิก
+            </button>
+          </div>
+        </form>
+      </td>
+    </tr>
   );
 }
 

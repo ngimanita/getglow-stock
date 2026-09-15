@@ -9,6 +9,8 @@ import {
   perUnitPrice,
   stockUnits,
   stockText,
+  consumeWord,
+  countWord,
   computeMetrics,
   threshold,
   reorderDateText,
@@ -96,13 +98,27 @@ describe('stockUnits', () => {
   });
 });
 
+describe('consumeWord / countWord (box + loose sub-unit tracking, generalized beyond literal "machines")', () => {
+  it('uses the plain "ยูนิต" drug-unit word for non-isMachine products regardless of subUnitWord', () => {
+    expect(consumeWord({ isMachine: false, subUnitWord: 'ชิ้น' })).toBe('ยูนิต');
+  });
+  it('uses the product\'s own subUnitWord for isMachine products (not hardcoded "shot")', () => {
+    expect(consumeWord({ isMachine: true, subUnitWord: 'ชิ้น' })).toBe('ชิ้น');
+    expect(consumeWord({ isMachine: true, subUnitWord: 'shot' })).toBe('shot');
+  });
+  it('countWord matches unitWord for non-isMachine, and subUnitWord for isMachine — e.g. a needle box', () => {
+    expect(countWord({ isMachine: false, unitWord: 'กล่อง', subUnitWord: 'ชิ้น' })).toBe('กล่อง');
+    expect(countWord({ isMachine: true, unitWord: 'กล่อง', subUnitWord: 'ชิ้น' })).toBe('ชิ้น');
+  });
+});
+
 describe('stockText', () => {
   const fmt = (v: number) => formatNumber(v);
   it('reads "{n} {unitWord}" for non-machine', () => {
-    expect(stockText({ isMachine: false, onHand: 33, openShots: 0, unitWord: 'ขวด' }, fmt)).toBe('33 ขวด');
+    expect(stockText({ isMachine: false, onHand: 33, openShots: 0, unitWord: 'ขวด', subUnitWord: 'shot' }, fmt)).toBe('33 ขวด');
   });
   it('reads "{n} หัว + {n} shot" for machine', () => {
-    expect(stockText({ isMachine: true, onHand: 2, openShots: 240, unitWord: 'หัว' }, fmt)).toBe('2 หัว + 240 shot');
+    expect(stockText({ isMachine: true, onHand: 2, openShots: 240, unitWord: 'หัว', subUnitWord: 'shot' }, fmt)).toBe('2 หัว + 240 shot');
   });
 });
 
@@ -123,6 +139,7 @@ describe('computeMetrics (rules #4-7)', () => {
       category: 'โบท็อกซ์',
       unitWord: 'ขวด',
       isMachine: false,
+      subUnitWord: 'shot',
       unitsPer: 100,
       onHand: 3,
       openShots: 0,
@@ -141,6 +158,7 @@ describe('computeMetrics (rules #4-7)', () => {
       category: 'ฟิลเลอร์',
       unitWord: 'กล่อง',
       isMachine: false,
+      subUnitWord: 'shot',
       unitsPer: 1,
       onHand: 30,
       openShots: 0,
@@ -159,6 +177,7 @@ describe('computeMetrics (rules #4-7)', () => {
       category: 'อื่น ๆ',
       unitWord: 'ชิ้น',
       isMachine: false,
+      subUnitWord: 'shot',
       unitsPer: 1,
       onHand: 38 * 1, // perDay will be 1/30 -> daysLeftRaw = round(38/(1/30)) is too big; instead set usage so perDay=1
       openShots: 0,
@@ -175,6 +194,7 @@ describe('computeMetrics (rules #4-7)', () => {
       category: 'อื่น ๆ',
       unitWord: 'ชิ้น',
       isMachine: false,
+      subUnitWord: 'shot',
       unitsPer: 1,
       onHand: 39,
       openShots: 0,
@@ -191,6 +211,7 @@ describe('computeMetrics (rules #4-7)', () => {
       category: 'อื่น ๆ',
       unitWord: 'ชิ้น',
       isMachine: false,
+      subUnitWord: 'shot',
       unitsPer: 1,
       onHand: 17,
       openShots: 0,

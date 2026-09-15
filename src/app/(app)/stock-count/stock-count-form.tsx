@@ -31,6 +31,7 @@ export function StockCountForm({
   const isM = M.isMachine(view.product);
   const cw = M.countWord(view.product);
   const uw = M.unitWord(view.product);
+  const subUw = view.product.subUnitWord;
   const cPerHead = Math.max(1, view.product.unitsPer);
 
   const [countedDate, setCountedDate] = useState(toISODate(today()));
@@ -85,7 +86,7 @@ export function StockCountForm({
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div>
               <label className="gg-label" htmlFor="counted">
-                {isM ? 'หัวที่ยังไม่เปิด (หัว)' : `นับได้จริง (${uw})`}
+                {isM ? `ที่ยังไม่เปิด (${uw})` : `นับได้จริง (${uw})`}
               </label>
               <input
                 id="counted"
@@ -116,7 +117,7 @@ export function StockCountForm({
           {isM && (
             <div className="mb-4 p-4 rounded-2xl border-2" style={{ borderColor: 'var(--gg-orange)', background: 'var(--gg-orange-wash)' }}>
               <label className="gg-label" htmlFor="openShots">
-                หัวที่เปิดค้างอยู่ — เหลือกี่ shot
+                {uw}ที่เปิดใช้ค้างอยู่ — เหลือกี่ {subUw}
               </label>
               <input
                 id="openShots"
@@ -130,9 +131,11 @@ export function StockCountForm({
                 className="gg-input mb-2"
               />
               <p className="text-[12px] text-[var(--text-muted)]">
-                อ่านเลขจากหน้าจอเครื่อง · 1 หัว = {formatNumber(cPerHead)} shot · ไม่มีหัวเปิดค้างใส่ 0
+                นับ{subUw}ที่เหลือในนั้น · 1 {uw} = {formatNumber(cPerHead)} {subUw} · ไม่มี{uw}เปิดค้างใส่ 0
               </p>
-              <p className="text-[13px] font-semibold mt-2">รวมทั้งหมด {formatNumber(counted)} shot</p>
+              <p className="text-[13px] font-semibold mt-2">
+                รวมทั้งหมด {formatNumber(counted)} {subUw}
+              </p>
             </div>
           )}
 

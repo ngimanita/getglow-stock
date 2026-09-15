@@ -40,19 +40,47 @@ export async function addProductAction(_prev: ActionState, formData: FormData): 
   const category = String(formData.get('category') || '').trim() || 'อื่น ๆ';
   const unitWord = String(formData.get('unitWord') || '').trim() || 'ชิ้น';
   const isMachine = formData.get('isMachine') === 'on';
+  const subUnitWord = String(formData.get('subUnitWord') || '').trim() || 'shot';
   const unitsPer = Math.max(1, Number(formData.get('unitsPer')) || 1);
   const usagePerMonth = Math.max(0.1, Number(formData.get('usagePerMonth')) || 1);
 
   if (!name) return { error: 'พิมพ์ชื่อสินค้าก่อนนะ' };
 
   await prisma.product.create({
-    data: { name, category, unitWord, isMachine, unitsPer, usagePerMonth, onHand: 0, openShots: 0, lastCountAt: new Date() },
+    data: { name, category, unitWord, isMachine, subUnitWord, unitsPer, usagePerMonth, onHand: 0, openShots: 0, lastCountAt: new Date() },
   });
   await logAudit(session, 'product.create', `เพิ่มสินค้า ${name}`);
 
   revalidatePath('/settings');
   revalidatePath('/dashboard');
   return { success: `เพิ่ม ${name} เข้าระบบแล้ว — ไปบันทึกล็อตซื้อเข้าได้เลย` };
+}
+
+export async function updateProductAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const session = await getSession();
+  requireOwner(session);
+
+  const id = String(formData.get('id') || '');
+  const name = String(formData.get('name') || '').trim();
+  const category = String(formData.get('category') || '').trim() || 'อื่น ๆ';
+  const unitWord = String(formData.get('unitWord') || '').trim() || 'ชิ้น';
+  const isMachine = formData.get('isMachine') === 'on';
+  const subUnitWord = String(formData.get('subUnitWord') || '').trim() || 'shot';
+  const unitsPer = Math.max(1, Number(formData.get('unitsPer')) || 1);
+  const usagePerMonth = Math.max(0.1, Number(formData.get('usagePerMonth')) || 1);
+
+  if (!id) return { error: 'ไม่พบสินค้านี้' };
+  if (!name) return { error: 'พิมพ์ชื่อสินค้าก่อนนะ' };
+
+  const product = await prisma.product.update({
+    where: { id },
+    data: { name, category, unitWord, isMachine, subUnitWord, unitsPer, usagePerMonth },
+  });
+  await logAudit(session, 'product.update', `แก้ไขสินค้า ${product.name}`);
+
+  revalidatePath('/settings');
+  revalidatePath('/', 'layout');
+  return { success: `บันทึกการแก้ไข ${product.name} แล้ว` };
 }
 
 export async function setProductArchivedAction(productId: string, archived: boolean): Promise<ActionState> {

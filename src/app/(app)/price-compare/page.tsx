@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import { getActiveProducts, getPriceCompareView, today } from '@/lib/queries';
+import { getActiveProducts, getPriceCompareView, getSupplierNames, today } from '@/lib/queries';
 import { ScreenHeader } from '@/components/screen-header';
-import { consumeWord, isMachine } from '@/lib/metrics';
+import { consumeWord, isMachine, unitWord } from '@/lib/metrics';
+import { LotTable } from './lot-table';
 
 export default async function PriceComparePage({
   searchParams,
@@ -11,7 +12,10 @@ export default async function PriceComparePage({
   const { product: productParam } = await searchParams;
   const products = await getActiveProducts();
   const productId = productParam && products.some((p) => p.id === productParam) ? productParam : products[0]?.id;
-  const view = productId ? await getPriceCompareView(productId) : null;
+  const [view, supplierNames] = await Promise.all([
+    productId ? getPriceCompareView(productId) : Promise.resolve(null),
+    getSupplierNames(),
+  ]);
 
   return (
     <div>
@@ -47,7 +51,7 @@ export default async function PriceComparePage({
             <p className="font-bold text-[18px] mb-1">{view.product.name}</p>
             <p className="text-[13px] text-[var(--text-muted)] mb-4">
               ราคาต่อ 1 {consumeWord(view.product)}
-              {isMachine(view.product) ? ' (ราคาหัว ÷ shot ต่อหัว)' : 'ยา'} ย้อนหลังตามล็อตที่ซื้อ
+              {isMachine(view.product) ? ` (ราคา${unitWord(view.product)} ÷ ${consumeWord(view.product)}ต่อ${unitWord(view.product)})` : 'ยา'} ย้อนหลังตามล็อตที่ซื้อ
             </p>
             <div className="grid grid-cols-3 gap-3 mb-6">
               <StatBox label="ต่ำสุดที่เคยซื้อ" value={view.stats.min} color="#2E7D5B" />
@@ -87,34 +91,7 @@ export default async function PriceComparePage({
             )}
           </div>
 
-          <div className="gg-panel mb-5 overflow-x-auto">
-            <table className="w-full text-[13px] min-w-[560px]">
-              <thead>
-                <tr className="text-left text-[var(--text-muted)] border-b border-[var(--line-hairline)]">
-                  <th className="py-2 font-medium">วันที่ซื้อ</th>
-                  <th className="py-2 font-medium">ซัพพลายเออร์</th>
-                  <th className="py-2 font-medium">จำนวน</th>
-                  <th className="py-2 font-medium text-right">ราคา/หน่วยขาย</th>
-                  <th className="py-2 font-medium text-right">ราคา/ยูนิตยา</th>
-                  <th className="py-2 font-medium text-right">หมดอายุ</th>
-                </tr>
-              </thead>
-              <tbody>
-                {view.tableRows.map((row, i) => (
-                  <tr key={i} style={{ background: row.rowBg }} className="border-b border-[var(--line-hairline)] last:border-0">
-                    <td className="py-2.5">{row.dateText}</td>
-                    <td className="py-2.5">{row.supplier}</td>
-                    <td className="py-2.5">{row.qtyText}</td>
-                    <td className="py-2.5 text-right">{row.priceText}</td>
-                    <td className="py-2.5 text-right font-semibold" style={{ color: row.perUnitColor }}>
-                      {row.perUnitText} {row.tag}
-                    </td>
-                    <td className="py-2.5 text-right">{row.expiryText}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <LotTable rows={view.tableRows} supplierNames={supplierNames} />
 
           <div className="rounded-3xl p-5 sm:p-6" style={{ background: 'var(--gg-ivory)' }}>
             <p className="font-bold text-[16px] mb-4">เทียบราคาซัพพลายเออร์ (ทุกสินค้า)</p>

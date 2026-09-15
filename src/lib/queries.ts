@@ -1,6 +1,6 @@
 import { prisma } from './db';
 import * as M from './metrics';
-import { formatThaiDate, formatNumber, formatBaht, parseLocalDate } from './format';
+import { formatThaiDate, formatNumber, formatBaht, parseLocalDate, toISODate } from './format';
 import type { Role } from './permissions';
 
 const fmtNum = (v: number, dp?: number) => formatNumber(v, dp);
@@ -101,7 +101,7 @@ export async function getDashboard(role: Role): Promise<{ rows: DashboardRow[]; 
       bgColor: STATUS_BG[m.status],
       onHandText: M.stockText(p, fmtNum),
       unitsText: isM
-        ? '= ' + fmtNum(M.stockUnits(p)) + ' shot พร้อมยิง'
+        ? '= ' + fmtNum(M.stockUnits(p)) + ' ' + p.subUnitWord + ' พร้อมใช้'
         : p.unitsPer > 1
           ? '= ' + fmtNum(p.onHand * p.unitsPer) + ' ยูนิต'
           : 'พร้อมใช้',
@@ -255,6 +255,7 @@ export interface PriceCompareView {
   stats: M.PriceStats;
   bars: { heightPct: number; valueText: string; color: string; borderColor: string; dateText: string; supplier: string }[];
   tableRows: {
+    id: string;
     dateText: string;
     supplier: string;
     qtyText: string;
@@ -264,6 +265,8 @@ export interface PriceCompareView {
     perUnitColor: string;
     rowBg: string;
     expiryText: string;
+    discarded: boolean;
+    raw: { purchaseDate: string; expiryDate: string; qty: number; unitPrice: number; supplierName: string };
   }[];
   supplierRows: { name: string; lotsText: string; valueText: string; deltaText: string; deltaColor: string }[];
 }
@@ -299,6 +302,7 @@ export async function getPriceCompareView(productId: string): Promise<PriceCompa
       const v = M.perUnitPrice(l, product);
       const tag = M.tagLotPrice(v, stats);
       return {
+        id: l.id,
         dateText: l.purchaseDate ? fmtDate(l.purchaseDate) : 'ไม่ระบุวันที่',
         supplier: l.supplierName,
         qtyText: fmtNum(l.qty) + ' ' + M.unitWord(product),
@@ -308,6 +312,14 @@ export async function getPriceCompareView(productId: string): Promise<PriceCompa
         perUnitColor: tag === 'min' ? '#2E7D5B' : tag === 'above-average' ? 'var(--gg-orange)' : 'var(--gg-black)',
         rowBg: tag === 'min' ? 'rgba(46,125,91,.07)' : 'transparent',
         expiryText: l.expiryDate ? fmtDate(l.expiryDate) : 'ไม่ระบุ',
+        discarded: l.discarded,
+        raw: {
+          purchaseDate: l.purchaseDate ? toISODate(l.purchaseDate) : '',
+          expiryDate: l.expiryDate ? toISODate(l.expiryDate) : '',
+          qty: l.qty,
+          unitPrice: l.unitPrice,
+          supplierName: l.supplierName,
+        },
       };
     });
 
@@ -455,6 +467,11 @@ export async function getSettingsPageData() {
       id: p.id,
       name: p.name,
       category: p.category,
+      unitWord: p.unitWord,
+      isMachine: p.isMachine,
+      subUnitWord: p.subUnitWord,
+      unitsPer: p.unitsPer,
+      usagePerMonth: p.usagePerMonth,
       unitText: (p.unitsPer > 1 ? fmtNum(p.unitsPer) + ' ' + M.consumeWord(p) + ' / ' : '') + M.unitWord(p),
       onHandText: M.stockText(p, fmtNum),
       usageText: fmtNum(p.usagePerMonth) + ' ' + M.countWord(p),

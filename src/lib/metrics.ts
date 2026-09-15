@@ -19,8 +19,10 @@ export interface ProductLike {
   category: string;
   /** Free-text sales-unit label (ขวด/กล่อง/ชิ้น/หลอด/แผง/...). */
   unitWord: string;
-  /** The only field that changes calculation behavior: shot-tracked device vs plain countable unit. */
+  /** The only field that changes calculation behavior: whether this product tracks box + loose sub-units. */
   isMachine: boolean;
+  /** Sub-unit label when isMachine (shot/ชิ้น/เม็ด/...) — the individual piece consumed from an opened container. */
+  subUnitWord: string;
   unitsPer: number;
   onHand: number;
   openShots: number;
@@ -69,13 +71,13 @@ export function unitWord(p: Pick<ProductLike, 'unitWord'>): string {
 }
 
 /** Drug unit word — what price-per-unit is expressed in. */
-export function consumeWord(p: Pick<ProductLike, 'isMachine'>): string {
-  return isMachine(p) ? 'shot' : 'ยูนิต';
+export function consumeWord(p: Pick<ProductLike, 'isMachine' | 'subUnitWord'>): string {
+  return isMachine(p) ? p.subUnitWord : 'ยูนิต';
 }
 
-/** The unit a stock count is entered in — same as sales unit, except machine uses shots. */
-export function countWord(p: Pick<ProductLike, 'isMachine' | 'unitWord'>): string {
-  return isMachine(p) ? 'shot' : unitWord(p);
+/** The unit a stock count is entered in — same as sales unit, except isMachine uses the sub-unit word. */
+export function countWord(p: Pick<ProductLike, 'isMachine' | 'unitWord' | 'subUnitWord'>): string {
+  return isMachine(p) ? p.subUnitWord : unitWord(p);
 }
 
 // ---- rule #1: stock quantity & price per drug unit --------------------
@@ -90,11 +92,11 @@ export function stockUnits(p: Pick<ProductLike, 'isMachine' | 'onHand' | 'openSh
 
 /** Human-readable on-hand text, e.g. "3 ขวด" or "2 หัว + 240 shot". */
 export function stockText(
-  p: Pick<ProductLike, 'isMachine' | 'onHand' | 'openShots' | 'unitWord'>,
+  p: Pick<ProductLike, 'isMachine' | 'onHand' | 'openShots' | 'unitWord' | 'subUnitWord'>,
   fmtNum: (v: number) => string,
 ): string {
   if (isMachine(p)) {
-    return `${fmtNum(p.onHand)} หัว + ${fmtNum(p.openShots || 0)} shot`;
+    return `${fmtNum(p.onHand)} ${unitWord(p)} + ${fmtNum(p.openShots || 0)} ${p.subUnitWord}`;
   }
   return `${fmtNum(p.onHand)} ${unitWord(p)}`;
 }

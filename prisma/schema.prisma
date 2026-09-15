@@ -18,10 +18,11 @@ model Product {
   name          String
   category      String   @default("อื่นๆ") // free text: โบท็อกซ์, ฟิลเลอร์, เมโส, ยากิน, ... — user-typed, not a fixed list
   unitWord      String   @default("ชิ้น") // sales-unit label: ขวด/กล่อง/ชิ้น/หลอด/แผง/... — user-typed
-  isMachine     Boolean  @default(false) // true = shot-tracked device (Ultraformer/Thermage-style heads)
-  unitsPer      Int      @default(1) // drug units (or shots) per sales unit; machine: shots per head
-  onHand        Float    @default(0) // sales units (vials/boxes/pieces), or unopened heads for machine
-  openShots     Int      @default(0) // machine only: shots left in the currently-mounted head
+  isMachine     Boolean  @default(false) // true = tracks box+loose-piece sub-units (device heads/shots, needle boxes, etc — not literally "machines" despite the field name)
+  subUnitWord   String   @default("shot") // sub-unit label when isMachine: shot/ชิ้น/เม็ด/... — user-typed
+  unitsPer      Int      @default(1) // sub-units per sales unit when isMachine (e.g. shots per head, pieces per box)
+  onHand        Float    @default(0) // sales units (vials/boxes/pieces), or unopened containers when isMachine
+  openShots     Int      @default(0) // isMachine only: sub-units left in the currently-opened container
   usagePerMonth Float    @default(1)
   lastCountAt   DateTime
   archived      Boolean  @default(false)

@@ -23,7 +23,7 @@ export function ReceiveLotForm({
   const { showToast } = useToast();
   const [state, formAction, pending] = useActionState<SaveLotState, FormData>(saveLotAction, {});
 
-  const [unitsPer, setUnitsPer] = useState(view.product.unitsPer);
+  const unitsPer = view.product.unitsPer;
   const [qty, setQty] = useState(0);
   const [price, setPrice] = useState(0);
   const [purchaseDate, setPurchaseDate] = useState('');
@@ -78,16 +78,8 @@ export function ReceiveLotForm({
               <label className="gg-label" htmlFor="unitsPer">
                 {cw} ต่อ 1 {uw}
               </label>
-              <input
-                id="unitsPer"
-                name="unitsPer"
-                type="number"
-                inputMode="numeric"
-                min={1}
-                value={unitsPer}
-                onChange={(e) => setUnitsPer(Number(e.target.value))}
-                className="gg-input"
-              />
+              <input id="unitsPer" type="number" value={unitsPer} disabled className="gg-input opacity-60" />
+              <p className="text-[11px] text-[var(--text-muted)] mt-1">แก้ไขได้ที่หน้าตั้งค่า → รายการสินค้า</p>
             </div>
             <div>
               <label className="gg-label" htmlFor="qty">
@@ -114,6 +106,7 @@ export function ReceiveLotForm({
                 type="number"
                 inputMode="decimal"
                 min={0}
+                step="0.01"
                 value={price || ''}
                 onChange={(e) => setPrice(Number(e.target.value))}
                 className="gg-input"
