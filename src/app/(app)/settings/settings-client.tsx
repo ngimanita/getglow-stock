@@ -9,6 +9,7 @@ import {
   addUserAction,
   resetPinAction,
   setProductArchivedAction,
+  deleteProductAction,
   setUserActiveAction,
   type ActionState,
 } from '@/lib/actions/settings';
@@ -256,6 +257,21 @@ export function ProductTable({ products }: { products: ProductRow[] }) {
                     />
                     <button onClick={() => setEditingId(p.id)} className="gg-btn gg-btn-ghost !py-1.5 !px-3 !text-[12px] !min-h-[32px]">
                       แก้ไข
+                    </button>
+                    <button
+                      disabled={pending}
+                      onClick={() => {
+                        if (!window.confirm(`ลบ "${p.name}" ออกจากระบบถาวร? (ลบได้เฉพาะสินค้าที่ยังไม่เคยมีประวัติล็อต/นับสต๊อก)`)) return;
+                        startTransition(async () => {
+                          const r = await deleteProductAction(p.id);
+                          if (r.success) showToast(r.success);
+                          if (r.error) showToast(r.error);
+                        });
+                      }}
+                      className="gg-btn gg-btn-ghost !py-1.5 !px-3 !text-[12px] !min-h-[32px]"
+                      style={{ color: 'var(--gg-orange)', borderColor: 'var(--gg-orange)' }}
+                    >
+                      ลบ
                     </button>
                   </div>
                 </td>

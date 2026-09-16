@@ -93,6 +93,30 @@ export async function setProductArchivedAction(productId: string, archived: bool
   return { success: archived ? `เก็บ ${product.name} เข้าคลังแล้ว` : `นำ ${product.name} กลับมาใช้งานแล้ว` };
 }
 
+/** Permanent delete — only allowed when the product has no purchase/count history (nothing to lose). Otherwise archive instead. */
+export async function deleteProductAction(productId: string): Promise<ActionState> {
+  const session = await getSession();
+  requireOwner(session);
+
+  const product = await prisma.product.findUnique({ where: { id: productId } });
+  if (!product) return { error: 'ไม่พบสินค้านี้' };
+
+  const [lotCount, countCount] = await Promise.all([
+    prisma.lot.count({ where: { productId } }),
+    prisma.stockCount.count({ where: { productId } }),
+  ]);
+  if (lotCount > 0 || countCount > 0) {
+    return { error: `ลบไม่ได้ — ${product.name} มีประวัติล็อต/นับสต๊อกอยู่แล้ว (${lotCount} ล็อต, ${countCount} ครั้งที่นับ) กด "เก็บเข้าคลัง" แทนได้` };
+  }
+
+  await prisma.product.delete({ where: { id: productId } });
+  await logAudit(session, 'product.delete', product.name);
+
+  revalidatePath('/settings');
+  revalidatePath('/dashboard');
+  return { success: `ลบ ${product.name} ออกจากระบบแล้ว` };
+}
+
 export async function addSupplierAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const session = await getSession();
   requireOwner(session);
